@@ -1,11 +1,14 @@
-import { Pressable, ScrollView, StyleSheet, Text } from 'react-native';
+import { Touch } from '@/ui/motion';
+import { ScrollView, StyleSheet, Text } from 'react-native';
 import type { Address } from 'viem';
 import { useContacts } from '@/state/contacts';
 import { Avatar } from './components';
-import { colors, radius, spacing } from './theme';
+import { radius, spacing, useTheme, useThemeStyles, type Theme } from './theme';
 
 /** Horizontal quick-pick of saved contacts. Hidden when there are none. */
 export function ContactChips({ onPick, exclude = [] }: { onPick: (a: Address, name: string) => void; exclude?: Address[] }) {
+  const styles = useThemeStyles(createStyles);
+  const { colors } = useTheme();
   const { list } = useContacts();
   const skip = new Set(exclude.map((a) => a.toLowerCase()));
   const shown = list.filter((c) => !skip.has(c.address.toLowerCase()));
@@ -13,7 +16,7 @@ export function ContactChips({ onPick, exclude = [] }: { onPick: (a: Address, na
   return (
     <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row} keyboardShouldPersistTaps="handled">
       {shown.map((c) => (
-        <Pressable
+        <Touch
           key={c.address}
           accessibilityRole="button"
           accessibilityLabel={`Choose ${c.name}`}
@@ -23,15 +26,16 @@ export function ContactChips({ onPick, exclude = [] }: { onPick: (a: Address, na
           <Text style={styles.text} numberOfLines={1}>
             {c.name}
           </Text>
-        </Pressable>
+        </Touch>
       ))}
     </ScrollView>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: Theme) => StyleSheet.create({
   row: { gap: spacing.sm, paddingBottom: spacing.md },
   chip: {
+    minHeight: 44,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 6,

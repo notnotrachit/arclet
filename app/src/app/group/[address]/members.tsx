@@ -1,5 +1,6 @@
+import { Touch } from '@/ui/motion';
 import { useState } from 'react';
-import { Alert, Platform, Pressable, Text, View } from 'react-native';
+import { Alert, Platform, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { Address } from 'viem';
@@ -13,21 +14,22 @@ import { useGroup } from '@/state/useGroup';
 import { useToast } from '@/state/toast';
 import { useReadyWallet } from '@/state/wallet';
 import { AddressPicker } from '@/ui/AddressPicker';
-import { Avatar, Banner, Button, Card, Field, ListRow, Screen, SectionTitle } from '@/ui/components';
-import { colors, spacing, type } from '@/ui/theme';
+import { Avatar, Banner, Button, Card, Field, ListRow, PageIntro, Empty, Screen, SectionTitle } from '@/ui/components';
+import { spacing, useTheme } from '@/ui/theme';
 
 export default function Members() {
+  const { colors, type } = useTheme();
   const { address: param } = useLocalSearchParams<{ address: string }>();
   const { account, network } = useReadyWallet();
   const { label, nameOf } = useContacts();
   const { refresh: refreshGroups } = useGroups();
   const toast = useToast();
-  const { address, detail, refresh, me } = useGroup(param);
+  const { address, detail, refresh, me, error: loadError, loading } = useGroup(param);
   const [busy, setBusy] = useState<string | null>(null);
   const [error, setError] = useState<string>();
   const [limit, setLimit] = useState<string | null>(null);
 
-  if (!address || !detail) return <Screen><Text style={type.muted}>Loading…</Text></Screen>;
+  if (!address || !detail) return <Screen refreshing={loading} onRefresh={refresh}>{loadError ? <><Banner tone="error">{loadError}</Banner><Button title="Try again" onPress={refresh} /></> : <Empty icon="people-outline" title="Loading members…" />}</Screen>;
   const isAdmin = detail.isAdmin;
 
   const run = async (key: string, prompt: string, fn: () => Promise<unknown>, done?: string) => {
@@ -64,6 +66,7 @@ export default function Members() {
 
   return (
     <Screen>
+      <PageIntro eyebrow="Group members" title="The people behind the plans." body="Manage who shares this wallet and what members can spend." />
       {isAdmin ? (
         <>
           <SectionTitle>Add a member</SectionTitle>
@@ -85,7 +88,7 @@ export default function Members() {
                 subtitle={shortAddress(m.address)}
                 right={
                   !isMe ? (
-                    <Pressable
+                    <Touch
                       accessibilityRole="button"
                       accessibilityLabel={nameOf(m.address) ? `Edit contact ${label(m.address)}` : 'Save as contact'}
                       hitSlop={8}
@@ -95,7 +98,7 @@ export default function Members() {
                         size={20}
                         color={colors.accent}
                       />
-                    </Pressable>
+                    </Touch>
                   ) : undefined
                 }
               />
@@ -105,6 +108,7 @@ export default function Members() {
                     title={m.admin ? 'Remove admin' : 'Make admin'}
                     variant="secondary"
                     style={{ flex: 1 }}
+                    disabled={!!busy}
                     loading={busy === `admin-${m.address}`}
                     onPress={() => run(`admin-${m.address}`, 'Change admin', () => setAdmin({ network, account, group: address, member: m.address, admin: !m.admin }))}
                   />
@@ -113,7 +117,7 @@ export default function Members() {
                     variant="danger"
                     style={{ flex: 1 }}
                     loading={busy === `rm-${m.address}`}
-                    disabled={m.net !== 0n}
+                    disabled={!!busy || m.net !== 0n}
                     onPress={() =>
                       confirm('Remove member?', `${label(m.address)} will lose access to the group wallet.`, () =>
                         run(`rm-${m.address}`, 'Remove member', () => removeMember({ network, account, group: address, member: m.address })),
@@ -144,7 +148,7 @@ export default function Members() {
           <Button
             title="Save limit"
             variant="secondary"
-            disabled={limit === null || limitUnits === null}
+            disabled={!!busy || limit === null || limitUnits === null}
             loading={busy === 'limit'}
             onPress={() => run('limit', 'Update spend limit', () => setSpendLimit({ network, account, group: address, limit: limitUnits ?? 0n }), 'Limit updated')}
           />
@@ -155,7 +159,7 @@ export default function Members() {
       <Button
         title="Leave group"
         variant="danger"
-        disabled={detail.myNet !== 0n}
+        disabled={!!busy || detail.myNet !== 0n}
         loading={busy === 'leave'}
         onPress={() =>
           confirm('Leave this group?', 'You’ll lose access to the group wallet.', () =>

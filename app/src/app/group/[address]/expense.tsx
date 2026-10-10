@@ -1,27 +1,30 @@
+import { Touch } from '@/ui/motion';
 import { useMemo, useState } from 'react';
-import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, TextInput, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { Address } from 'viem';
 import { confirmWithBiometrics } from '@/lib/auth';
-import { formatUsdc, parseUsdcInput } from '@/lib/format';
+import { formatPaymentAmount as formatUsdc, parseUsdcInput } from '@/lib/format';
 import { addExpense } from '@/lib/groups';
 import { friendlyError } from '@/lib/tx';
 import { useContacts } from '@/state/contacts';
 import { useGroups } from '@/state/groups';
 import { useGroup } from '@/state/useGroup';
 import { useReadyWallet } from '@/state/wallet';
-import { AmountInput, Avatar, Banner, Button, Card, Field, Screen, SectionTitle, Segmented } from '@/ui/components';
-import { colors, radius, spacing, type } from '@/ui/theme';
+import { AmountInput, Avatar, Banner, Button, Card, Field, Screen, SectionTitle, Segmented, PageIntro } from '@/ui/components';
+import { radius, spacing, useTheme, useThemeStyles, type Theme } from '@/ui/theme';
 
 type Mode = 'equal' | 'custom';
 
 export default function AddExpense() {
+  const styles = useThemeStyles(createStyles);
+  const { colors, type } = useTheme();
   const { address: param } = useLocalSearchParams<{ address: string }>();
   const { account, network } = useReadyWallet();
   const { label } = useContacts();
   const { refresh: refreshGroups } = useGroups();
-  const { address, detail, me } = useGroup(param);
+  const { address, detail, me, error: loadError } = useGroup(param);
   const [amountInput, setAmountInput] = useState('');
   const [note, setNote] = useState('');
   const [paidBy, setPaidBy] = useState<Address>(me);
@@ -49,7 +52,7 @@ export default function AddExpense() {
         ? `Custom amounts add up to $${formatUsdc(customTotal)}, not $${formatUsdc(amount)}.`
         : null;
   const canAdmin = detail?.isAdmin ?? false;
-  const valid = !!amount && amount > 0n && !problem && !!address;
+  const valid = !!detail && members.some((m) => m.address.toLowerCase() === me.toLowerCase()) && !!amount && amount > 0n && !problem && !!address;
 
   const onSave = async () => {
     if (!amount || !address) return;
@@ -76,23 +79,25 @@ export default function AddExpense() {
 
   return (
     <Screen footer={<Button title="Save expense" onPress={onSave} loading={busy} disabled={!valid} />}>
+      <PageIntro eyebrow="Split an expense" title="You paid. We’ll do the math." body="Record the total, choose who paid, and decide how to split it." />
       <Text style={[type.muted, { textAlign: 'center' }]}>Something someone paid for out of pocket</Text>
       <AmountInput value={amountInput} onChange={setAmountInput} autoFocus />
-      <Field label="What for?" placeholder="Dinner at Thalassa" value={note} onChangeText={(t) => setNote(t.slice(0, 280))} />
+      <Field label="What for?" placeholder="Dinner at Thalassa" value={note} onChangeText={(t) => setNote(t.slice(0, 280))} hint="Expense details are visible to everyone on Arc." />
 
       <SectionTitle>Paid by</SectionTitle>
       <View style={styles.chips}>
         {members
           .filter((m) => canAdmin || m.address.toLowerCase() === me.toLowerCase())
           .map((m) => (
-            <Pressable
+            <Touch
               key={m.address}
               accessibilityRole="radio"
               accessibilityState={{ checked: paidBy === m.address }}
+              aria-checked={paidBy === m.address}
               onPress={() => setPaidBy(m.address)}
               style={[styles.chip, paidBy === m.address && styles.chipOn]}>
               <Text style={{ color: colors.text, fontWeight: '600' }}>{label(m.address)}</Text>
-            </Pressable>
+            </Touch>
           ))}
       </View>
       {!canAdmin ? <Text style={type.small}>Only admins can record an expense on someone else’s behalf.</Text> : null}
@@ -111,9 +116,10 @@ export default function AddExpense() {
           const on = selected.has(m.address);
           return (
             <View key={m.address} style={styles.memberRow}>
-              <Pressable
+              <Touch
                 accessibilityRole="checkbox"
                 accessibilityState={{ checked: on }}
+                aria-checked={on}
                 onPress={() => toggle(m.address)}
                 style={styles.memberLeft}>
                 <Ionicons name={on ? 'checkbox' : 'square-outline'} size={22} color={on ? colors.accent : colors.textFaint} />
@@ -121,7 +127,7 @@ export default function AddExpense() {
                 <Text style={[type.body, { marginLeft: spacing.sm, flex: 1 }]} numberOfLines={1}>
                   {label(m.address)}
                 </Text>
-              </Pressable>
+              </Touch>
               {on && mode === 'custom' ? (
                 <TextInput
                   accessibilityLabel={`Amount for ${label(m.address)}`}
@@ -141,14 +147,16 @@ export default function AddExpense() {
       </Card>
       {problem ? <Banner tone="warning">{problem}</Banner> : null}
       <Banner>Recording an expense doesn’t move money. It updates who owes whom, and people settle up later.</Banner>
+      {loadError ? <Banner tone="error">Couldn’t load this group. Go back and try again.</Banner> : null}
       {error ? <Banner tone="error">{error}</Banner> : null}
     </Screen>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: Theme) => StyleSheet.create({
   chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, marginBottom: spacing.sm },
   chip: {
+    minHeight: 44, justifyContent: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: radius.pill,
@@ -158,7 +166,7 @@ const styles = StyleSheet.create({
   },
   chipOn: { borderColor: colors.accent, backgroundColor: colors.accentSoft },
   memberRow: { flexDirection: 'row', alignItems: 'center', paddingVertical: 10 },
-  memberLeft: { flexDirection: 'row', alignItems: 'center', flex: 1, gap: spacing.sm },
+  memberLeft: { minHeight: 44, flexDirection: 'row', alignItems: 'center', flex: 1, gap: spacing.sm },
   shareInput: {
     width: 90,
     textAlign: 'right',

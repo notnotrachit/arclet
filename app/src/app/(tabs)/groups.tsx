@@ -6,10 +6,11 @@ import { formatUsdc } from '@/lib/format';
 import { NETWORKS } from '@/lib/networks';
 import { useGroups } from '@/state/groups';
 import { useReadyWallet } from '@/state/wallet';
-import { Banner, Button, Card, Empty, ListRow, Screen } from '@/ui/components';
-import { colors, spacing, type } from '@/ui/theme';
+import { Banner, Button, Card, Empty, ListRow, PageIntro, Screen } from '@/ui/components';
+import { spacing, useTheme } from '@/ui/theme';
 
 export default function Groups() {
+  const { colors, type } = useTheme();
   const { network } = useReadyWallet();
   const { groups, loading, refresh, available } = useGroups();
 
@@ -21,7 +22,7 @@ export default function Groups() {
 
   if (!available) {
     return (
-      <Screen>
+      <Screen edges={[]}>
         <Banner tone="warning">Group wallets aren’t deployed on {NETWORKS[network].label} yet. Switch networks in Settings.</Banner>
       </Screen>
     );
@@ -29,16 +30,21 @@ export default function Groups() {
 
   return (
     <Screen
+      edges={[]}
       refreshing={loading}
       onRefresh={refresh}
-      footer={<Button title="New group" icon="add" onPress={() => router.push('/group/new')} />}>
-      <Text style={[type.muted, { marginBottom: spacing.md }]}>
-        A group wallet is a shared USDC pot on Arc. Members add money and pay from it, and you can split
-        expenses someone paid for out of pocket.
+      footer={<Button title="Create a group" icon="add" onPress={() => router.push('/group/new')} />}>
+      <PageIntro eyebrow="Better together" title="One group. Less figuring out." body="Pool money for plans, or split expenses after someone pays." />
+      <View style={{ flexDirection: 'row', gap: spacing.sm, marginBottom: spacing.sm }}>
+        <Card style={{ flex: 1 }}><Text style={type.small}>SHARED WALLETS</Text><Text style={[type.title, { marginTop: spacing.sm }]}>{groups.length}</Text></Card>
+        <Card style={{ flex: 1 }}><Text style={type.small}>POOLED USDC</Text><Text style={[type.title, { marginTop: spacing.sm }]} adjustsFontSizeToFit numberOfLines={1}>${formatUsdc(groups.reduce((total, group) => total + group.balance, 0n))}</Text></Card>
+      </View>
+      <Text style={[type.muted, { marginBottom: spacing.md }]} accessible={false}>
+        Shared wallets for trips, home, and everything in between.
       </Text>
       <Card style={{ paddingVertical: spacing.xs }}>
         {groups.length === 0 ? (
-          <Empty icon="people-outline" title="No groups yet" body="Create one for a trip, a flat, or a team." />
+          <Empty icon="people-outline" title="Good plans start with your people" body="Create a group, add friends, and keep shared money and expenses in one place." />
         ) : (
           groups.map((g) => (
             <ListRow

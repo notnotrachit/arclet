@@ -5,9 +5,9 @@
     "scheme": "arclet",
     "version": "0.1.0",
     "orientation": "portrait",
-    "icon": "./assets/icon.png",
-    "userInterfaceStyle": "dark",
-    "backgroundColor": "#0B0F17",
+    "icon": "./assets/brand/arclet-icon.png",
+    "userInterfaceStyle": "automatic",
+    "backgroundColor": "#EEF5FB",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "app.arclet.wallet",
@@ -18,18 +18,20 @@
     "android": {
       "package": "app.arclet.wallet",
       "adaptiveIcon": {
-        "backgroundColor": "#0B0F17",
-        "foregroundImage": "./assets/android-icon-foreground.png",
-        "backgroundImage": "./assets/android-icon-background.png",
-        "monochromeImage": "./assets/android-icon-monochrome.png"
+        "backgroundColor": "#112039",
+        "foregroundImage": "./assets/brand/arclet-adaptive-foreground.png",
+        "monochromeImage": "./assets/brand/arclet-monochrome.png"
       },
-      "permissions": ["android.permission.NFC", "android.permission.USE_BIOMETRIC"],
+      "permissions": [
+        "android.permission.NFC",
+        "android.permission.USE_BIOMETRIC"
+      ],
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/favicon.png"
+      "favicon": "./assets/brand/arclet-favicon.png"
     },
     "experiments": {
       "typedRoutes": true
@@ -60,19 +62,34 @@
       [
         "expo-notifications",
         {
-          "color": "#4F8CFF"
+          "color": "#273A63"
         }
       ],
       [
         "react-native-nfc-manager",
         {
           "nfcPermission": "Arclet reads payment requests when you tap another phone.",
-          "selectIdentifiers": ["D2760000850101"],
+          "selectIdentifiers": [
+            "D2760000850101"
+          ],
           "includeNdefEntitlement": true
         }
       ],
       "expo-build-properties",
-      "./plugins/withNfcLaunch"
+      "./plugins/withNfcLaunch",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#EEF5FB",
+          "image": "./assets/brand/arclet-mark.png",
+          "imageWidth": 200,
+          "resizeMode": "contain",
+          "dark": {
+            "image": "./assets/brand/arclet-mark.png",
+            "backgroundColor": "#0C1424"
+          }
+        }
+      ]
     ]
   }
 }

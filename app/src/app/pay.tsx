@@ -1,11 +1,12 @@
-import { useMemo, useState } from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Touch } from '@/ui/motion';
+import { useMemo, useRef, useState } from 'react';
+import { Linking, StyleSheet, Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAddress, isAddress, type Address, type Hex } from 'viem';
 import { confirmWithBiometrics } from '@/lib/auth';
-import { formatUsdc, parseUsdcInput, shortAddress } from '@/lib/format';
+import { formatPaymentAmount as formatUsdc, parseUsdcInput, shortAddress } from '@/lib/format';
 import { networkByChainId, NETWORKS, txUrl } from '@/lib/networks';
 import { MAX_NOTE_LENGTH, payFromGroup, payPersonal } from '@/lib/payments';
 import { friendlyError } from '@/lib/tx';
@@ -13,9 +14,9 @@ import { useActivity } from '@/state/activity';
 import { useContacts } from '@/state/contacts';
 import { useGroups } from '@/state/groups';
 import { useReadyWallet } from '@/state/wallet';
-import { AmountInput, Avatar, Banner, Button, Card, Field, Screen, SectionTitle } from '@/ui/components';
+import { AmountInput, Avatar, Banner, Button, Card, Field, Screen, SectionTitle, PageIntro, SuccessMark } from '@/ui/components';
 import { ContactChips } from '@/ui/ContactChips';
-import { colors, radius, spacing, type } from '@/ui/theme';
+import { radius, spacing, useTheme, useThemeStyles, type Theme } from '@/ui/theme';
 
 /** Reserve kept back from "personal" payments so the wallet can still pay gas (in USDC). */
 const FEE_RESERVE = 10_000n; // $0.01
@@ -23,8 +24,10 @@ const FEE_RESERVE = 10_000n; // $0.01
 type Params = { to?: string; amount?: string; note?: string; ref?: string; chain?: string; label?: string; from?: string };
 
 export default function Pay() {
+  const styles = useThemeStyles(createStyles);
+  const { colors, type } = useTheme();
   const params = useLocalSearchParams<Params>();
-  const { account, address, balance, network, setNetwork, refreshBalance } = useReadyWallet();
+  const { account, address, balance, balanceError, network, setNetwork, refreshBalance } = useReadyWallet();
   const { groups, refresh: refreshGroups } = useGroups();
   const { label, nameOf } = useContacts();
   const { refresh: refreshActivity } = useActivity();
@@ -41,6 +44,8 @@ export default function Pay() {
     params.from && isAddress(params.from) ? getAddress(params.from) : 'personal',
   );
   const [busy, setBusy] = useState(false);
+  const [reviewing, setReviewing] = useState(false);
+  const submitting = useRef(false);
   const [error, setError] = useState<string>();
   const [done, setDone] = useState<{ hash: Hex; amount: bigint } | null>(null);
 
@@ -49,7 +54,7 @@ export default function Pay() {
 
   const to = fixedTo ?? (isAddress(toInput.trim()) ? getAddress(toInput.trim()) : null);
   const amount = fixedAmount ?? parseUsdcInput(amountInput);
-  const group = source === 'personal' ? null : groups.find((g) => g.address === source) ?? null;
+  const group = source === 'personal' ? null : groups.find((g) => g.address.toLowerCase() === source.toLowerCase()) ?? null;
   const available = group ? group.balance : balance !== null ? balance - FEE_RESERVE : null;
 
   const validation = useMemo(() => {
@@ -61,14 +66,16 @@ export default function Pay() {
     return null;
   }, [to, toInput, address, amount, available, group]);
 
-  const canPay = !!to && !!amount && amount > 0n && !validation && !wrongNetwork;
+  const sourceMissing = source !== 'personal' && !group;
+  const canPay = !sourceMissing && available !== null && !!to && !!amount && amount > 0n && !validation && !wrongNetwork;
 
   const onPay = async () => {
-    if (!to || !amount) return;
+    if (!to || !amount || !canPay || submitting.current) return;
+    submitting.current = true;
     setError(undefined);
-    if (!(await confirmWithBiometrics(`Pay ${formatUsdc(amount)} USDC`))) return;
     setBusy(true);
     try {
+      if (!(await confirmWithBiometrics(`Pay ${formatUsdc(amount)} USDC`))) return;
       const common = { network, account, to, amount, note: note.trim() || undefined, ref: params.ref };
       const tx = group ? await payFromGroup({ ...common, group: group.address }) : await payPersonal(common);
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
@@ -80,6 +87,7 @@ export default function Pay() {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error).catch(() => {});
       setError(friendlyError(e));
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   };
@@ -102,9 +110,8 @@ export default function Pay() {
           </>
         }>
         <View style={styles.success}>
-          <View style={styles.check}>
-            <Ionicons name="checkmark" size={56} color={colors.bg} />
-          </View>
+          <SuccessMark />
+          <Text style={[type.heading, { marginTop: spacing.lg }]}>Payment sent</Text>
           <Text style={[type.hero, { marginTop: spacing.lg }]}>${formatUsdc(done.amount)}</Text>
           <Text style={type.muted}>sent to {known}{group ? ` from ${group.name}` : ''}</Text>
           <Text style={[type.small, { marginTop: spacing.sm }]}>Final on Arc. No confirmations to wait for.</Text>
@@ -122,17 +129,40 @@ export default function Pay() {
     );
   }
 
+  if (reviewing && to && amount) {
+    return <Screen footer={<>
+      <Button title={`Confirm & send $${formatUsdc(amount)}`} icon="lock-closed-outline" onPress={onPay} loading={busy} loadingTitle="Confirming payment…" disabled={!canPay} />
+      <Button title="Edit payment" variant="ghost" onPress={() => { setReviewing(false); setError(undefined); }} disabled={busy} style={{ marginTop: spacing.sm }} />
+    </>}>
+      <PageIntro eyebrow="One last look" title="Ready to send?" body="Check the recipient and amount before approving your payment." />
+      <Card style={{ alignItems: 'center', paddingVertical: spacing.xl }}>
+        <Avatar address={to} name={nameOf(to)} size={64} />
+        <Text style={[type.heading, { marginTop: spacing.md }]}>{nameOf(to) ?? (recipientName || label(to))}</Text>
+        <Text style={[type.mono, { marginTop: spacing.xs }]} selectable>{to}</Text>
+        <Text style={[type.hero, { marginTop: spacing.lg }]} adjustsFontSizeToFit numberOfLines={1}>${formatUsdc(amount)}</Text>
+        <Text style={type.muted}>USDC on {NETWORKS[network].label}</Text>
+      </Card>
+      <Card><Text style={type.small}>PAYING FROM</Text><Text style={[type.heading, { marginTop: spacing.xs }]}>{group?.name ?? 'My wallet'}</Text>{note.trim() ? <><Text style={[type.small, { marginTop: spacing.md }]}>PUBLIC NOTE</Text><Text style={type.body}>{note.trim()}</Text></> : null}</Card>
+      <Banner>Network fees are paid in USDC. Completed payments are final; check the address carefully.</Banner>
+      {balanceError && source === 'personal' ? <Banner tone="warning">{balanceError} <Text onPress={refreshBalance} style={{ color: colors.accent }}>Retry</Text></Banner> : null}
+      {sourceMissing ? <Banner tone="error">This group wallet is unavailable. Choose another payment source.</Banner> : null}
+      {validation ? <Banner tone="error">{validation}</Banner> : null}
+      {error ? <Banner tone="error">{error}</Banner> : null}
+    </Screen>;
+  }
+
   return (
     <Screen
       footer={
         <Button
-          title={amount ? `Pay $${formatUsdc(amount)}` : 'Pay'}
+          title="Review payment"
           icon="lock-closed-outline"
-          onPress={onPay}
+          onPress={() => setReviewing(true)}
           loading={busy}
           disabled={!canPay}
         />
       }>
+      <PageIntro eyebrow="Send money" title="A few taps. All settled." body="Choose who to pay and how much to send." />
       {wrongNetwork && requestedNetwork ? (
         <Banner tone="warning">
           This request is for {requestedNetwork.label}, but you’re on {NETWORKS[network].label}.{' '}
@@ -152,7 +182,7 @@ export default function Pay() {
             <Text style={type.mono}>{shortAddress(fixedTo)}</Text>
           </View>
           {!nameOf(fixedTo) ? (
-            <Pressable
+            <Touch
               accessibilityRole="button"
               accessibilityLabel="Save as contact"
               hitSlop={8}
@@ -160,13 +190,13 @@ export default function Pay() {
                 router.push({ pathname: '/contact/new', params: { address: fixedTo, ...(params.label ? { name: params.label } : {}) } })
               }>
               <Ionicons name="person-add-outline" size={22} color={colors.accent} />
-            </Pressable>
+            </Touch>
           ) : null}
         </Card>
       ) : (
         <View>
           <Field
-            label="To"
+            label="Recipient"
             placeholder="0x… address, or pick a contact below"
             value={toInput}
             onChangeText={setToInput}
@@ -183,14 +213,14 @@ export default function Pay() {
       {fixedAmount ? (
         <View style={{ alignItems: 'center', marginVertical: spacing.lg }}>
           <Text style={type.muted}>Requested</Text>
-          <Text style={type.hero}>${formatUsdc(fixedAmount)}</Text>
+          <Text style={type.hero} adjustsFontSizeToFit numberOfLines={1}>${formatUsdc(fixedAmount)}</Text>
         </View>
       ) : (
         <AmountInput value={amountInput} onChange={setAmountInput} autoFocus={!!fixedTo} />
       )}
 
       <Field
-        label="Note"
+        label="Note (optional)"
         placeholder="What’s it for? (visible onchain)"
         value={note}
         onChangeText={(t) => setNote(t.slice(0, MAX_NOTE_LENGTH))}
@@ -201,7 +231,7 @@ export default function Pay() {
       <SourceOption
         selected={source === 'personal'}
         title="My wallet"
-        subtitle={balance === null ? '…' : `$${formatUsdc(balance)} available`}
+        subtitle={balance === null ? 'Loading balance…' : `$${formatUsdc(balance !== null && balance > FEE_RESERVE ? balance - FEE_RESERVE : 0n)} available · $0.01 kept for fees`}
         icon="wallet-outline"
         onPress={() => setSource('personal')}
       />
@@ -216,6 +246,8 @@ export default function Pay() {
         />
       ))}
 
+      {balanceError && source === 'personal' ? <Banner tone="warning">{balanceError} <Text onPress={refreshBalance} style={{ color: colors.accent }}>Retry</Text></Banner> : null}
+      {sourceMissing ? <Banner tone="error">This group wallet is unavailable. Choose another payment source.</Banner> : null}
       {validation && to ? <Banner tone="error">{validation}</Banner> : null}
       {error ? <Banner tone="error">{error}</Banner> : null}
     </Screen>
@@ -235,10 +267,13 @@ function SourceOption({
   icon: React.ComponentProps<typeof Ionicons>['name'];
   onPress: () => void;
 }) {
+  const styles = useThemeStyles(createStyles);
+  const { colors, type } = useTheme();
   return (
-    <Pressable
+    <Touch
       accessibilityRole="radio"
       accessibilityState={{ checked: selected }}
+      aria-checked={selected}
       onPress={onPress}
       style={[styles.source, selected && { borderColor: colors.accent }]}>
       <Ionicons name={icon} size={22} color={selected ? colors.accent : colors.textMuted} />
@@ -247,11 +282,11 @@ function SourceOption({
         <Text style={type.small}>{subtitle}</Text>
       </View>
       <Ionicons name={selected ? 'radio-button-on' : 'radio-button-off'} size={20} color={selected ? colors.accent : colors.textFaint} />
-    </Pressable>
+    </Touch>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: Theme) => StyleSheet.create({
   recipient: { flexDirection: 'row', alignItems: 'center' },
   source: {
     flexDirection: 'row',
@@ -263,7 +298,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     marginBottom: spacing.sm,
   },
-  success: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  success: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: spacing.sm },
   check: {
     width: 96,
     height: 96,

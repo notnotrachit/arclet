@@ -9,12 +9,16 @@ import { addressUrl, txUrl, type NetworkId } from '@/lib/networks';
 import { useContacts } from '@/state/contacts';
 import { useGroup } from '@/state/useGroup';
 import { useReadyWallet } from '@/state/wallet';
-import { ActionButton, Avatar, Banner, Button, Card, Empty, ListRow, Screen, Segmented } from '@/ui/components';
-import { colors, spacing, type } from '@/ui/theme';
+import { ActionButton, Avatar, Banner, Button, Card, Empty, ListRow, Screen, Segmented, PageIntro } from '@/ui/components';
+import { GradientPanel } from '@/ui/Atmosphere';
+import { Pulse } from '@/ui/motion';
+import { spacing, useTheme, useThemeStyles, type Theme } from '@/ui/theme';
 
 type Tab = 'activity' | 'balances';
 
 export default function GroupScreen() {
+  const styles = useThemeStyles(createStyles);
+  const { colors, type } = useTheme();
   const { address: param } = useLocalSearchParams<{ address: string }>();
   const { network } = useReadyWallet();
   const { label } = useContacts();
@@ -25,7 +29,7 @@ export default function GroupScreen() {
   if (!detail) {
     return (
       <Screen refreshing={loading} onRefresh={refresh}>
-        {error ? <Banner tone="error">{error}</Banner> : <Text style={type.muted}>Loading…</Text>}
+        {error ? <Banner tone="error">{error}</Banner> : <Pulse><Empty icon="people-outline" title="Opening your group…" body="Getting the latest balance and members." /></Pulse>}
       </Screen>
     );
   }
@@ -39,17 +43,18 @@ export default function GroupScreen() {
   return (
     <Screen refreshing={loading} onRefresh={refresh}>
       <Stack.Screen options={{ title: detail.name }} />
-      <View style={styles.balance}>
+      <PageIntro eyebrow="Shared wallet" title={detail.name} body={`${detail.members.length} members · ${detail.isAdmin ? 'You’re an admin' : 'Made for sharing'}`} />
+      <GradientPanel style={styles.balance}>
         <Text style={type.muted}>Group wallet</Text>
         <Text style={type.hero}>${formatUsdc(detail.balance)}</Text>
         <Text style={type.small} onPress={() => Linking.openURL(addressUrl(network, address))}>
           {shortAddress(address)} · {detail.members.length} members ↗
         </Text>
-      </View>
+      </GradientPanel>
 
       {!isMember ? <Banner tone="warning">You’re not a member of this group.</Banner> : null}
 
-      <View style={styles.actions}>
+      {isMember ? <View style={styles.actions}>
         <ActionButton icon="add-circle-outline" label="Add money" onPress={() => go('deposit')} />
         <ActionButton
           icon="arrow-up"
@@ -58,7 +63,7 @@ export default function GroupScreen() {
         />
         <ActionButton icon="receipt-outline" label="Expense" onPress={() => go('expense')} />
         <ActionButton icon="person-add-outline" label="Members" onPress={() => go('members')} />
-      </View>
+      </View> : <Button title="View members" variant="secondary" onPress={() => go('members')} />}
       {detail.memberSpendLimit > 0n ? (
         <Text style={[type.small, { textAlign: 'center', marginBottom: spacing.sm }]}>
           Members can pay up to ${formatUsdc(detail.memberSpendLimit)} per payment{detail.isAdmin ? ' (you’re an admin: no limit)' : ''}.
@@ -138,6 +143,8 @@ export default function GroupScreen() {
 }
 
 function HistoryRow({ item, network, label }: { item: GroupHistoryItem; network: NetworkId; label: (a: Address) => string }) {
+  const styles = useThemeStyles(createStyles);
+  const { colors } = useTheme();
   const open = () => Linking.openURL(txUrl(network, item.txHash));
   const icon = (name: React.ComponentProps<typeof Ionicons>['name'], color = colors.textMuted) => (
     <View style={styles.histIcon}>
@@ -175,8 +182,8 @@ function HistoryRow({ item, network, label }: { item: GroupHistoryItem; network:
   }
 }
 
-const styles = StyleSheet.create({
-  balance: { alignItems: 'center', marginVertical: spacing.lg, gap: 4 },
+const createStyles = ({ colors }: Theme) => StyleSheet.create({
+  balance: { alignItems: 'center', paddingVertical: spacing.lg, gap: 6, marginBottom: spacing.md, borderColor: colors.orbital },
   actions: { flexDirection: 'row', justifyContent: 'space-evenly', marginBottom: spacing.md },
   histIcon: {
     width: 40,

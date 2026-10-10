@@ -7,11 +7,14 @@ import { cancelNfcRead, canReadNfc, isNfcOn, openNfcSettings, readPaymentTag } f
 import { parsePaymentUri } from '@/lib/payments';
 import { openPayRequest } from '@/lib/routing';
 import { Button, Screen } from '@/ui/components';
-import { colors, spacing, type } from '@/ui/theme';
+import { Pulse } from '@/ui/motion';
+import { spacing, useTheme, useThemeStyles, type Theme } from '@/ui/theme';
 
 type State = 'checking' | 'unsupported' | 'off' | 'scanning' | 'error';
 
 export default function Tap() {
+  const styles = useThemeStyles(createStyles);
+  const { colors, type } = useTheme();
   const [state, setState] = useState<State>('checking');
   const [error, setError] = useState<string>();
   const active = useRef(true);
@@ -53,7 +56,9 @@ export default function Tap() {
     <Screen
       scroll={false}
       footer={
-        state === 'off' ? (
+        state === 'unsupported' ? (
+          <Button title="Scan a QR instead" icon="qr-code-outline" onPress={() => router.replace('/scan')} />
+        ) : state === 'off' ? (
           <Button title="Open NFC settings" onPress={openNfcSettings} />
         ) : state === 'error' ? (
           <Button title="Try again" onPress={scan} />
@@ -62,11 +67,11 @@ export default function Tap() {
         )
       }>
       <View style={styles.center}>
-        <View style={styles.pulse}>
+        <Pulse active={state === 'scanning'} style={styles.pulse}>
           <Ionicons name="radio-outline" size={64} color={colors.accent} />
-        </View>
+        </Pulse>
         <Text style={[type.title, { marginTop: spacing.lg }]}>
-          {state === 'unsupported' ? 'NFC not available' : state === 'off' ? 'NFC is off' : 'Tap to pay'}
+          {state === 'unsupported' ? 'NFC not available' : state === 'off' ? 'NFC is off' : state === 'error' ? 'Let’s try that again' : state === 'checking' ? 'Checking NFC…' : 'Bring phones together'}
         </Text>
         <Text style={[type.muted, styles.text]}>
           {state === 'unsupported'
@@ -84,7 +89,7 @@ export default function Tap() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: Theme) => StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   pulse: {
     width: 140,

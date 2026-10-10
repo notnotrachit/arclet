@@ -1,12 +1,13 @@
+import { Touch } from '@/ui/motion';
 import { useState } from "react";
-import { Pressable, StyleSheet, TextInput, View } from "react-native";
+import { StyleSheet, Text, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { getAddress, isAddress, type Address } from "viem";
 import { parsePaymentUri } from "@/lib/payments";
 import { requestScannedAddress } from "@/lib/scanBus";
 import { ContactChips } from "./ContactChips";
-import { colors, radius, spacing } from "./theme";
+import { radius, spacing, useTheme, useThemeStyles, type Theme } from './theme';
 
 /** Paste / type / scan an address, or tap a saved contact. Calls onAdd with a checksummed address. */
 export function AddressPicker({
@@ -19,13 +20,17 @@ export function AddressPicker({
   /** Contacts to hide from the quick-pick (e.g. people already added). */
   exclude?: Address[];
 }) {
+  const styles = useThemeStyles(createStyles);
+  const { colors } = useTheme();
+  const [focused, setFocused] = useState(false);
   const [text, setText] = useState("");
   const parsed = isAddress(text.trim())
     ? getAddress(text.trim())
     : (parsePaymentUri(text)?.to ?? null);
 
+  const excluded = parsed && exclude.some((a) => a.toLowerCase() === parsed.toLowerCase());
   const add = () => {
-    if (!parsed) return;
+    if (!parsed || excluded) return;
     onAdd(parsed);
     setText("");
   };
@@ -41,10 +46,13 @@ export function AddressPicker({
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           autoCorrect={false}
-          style={styles.input}
+          selectionColor={colors.accent}
+          onFocus={() => setFocused(true)}
+          onBlur={() => setFocused(false)}
+          style={[styles.input, focused && { borderColor: colors.accent }]}
           onSubmitEditing={add}
         />
-        <Pressable
+        <Touch
           accessibilityRole="button"
           accessibilityLabel="Scan address QR"
           style={styles.icon}
@@ -54,26 +62,28 @@ export function AddressPicker({
           }}
         >
           <Ionicons name="qr-code-outline" size={20} color={colors.text} />
-        </Pressable>
-        <Pressable
+        </Touch>
+        <Touch
           accessibilityRole="button"
           accessibilityLabel="Add address"
           style={[
             styles.icon,
             { backgroundColor: parsed ? colors.accent : colors.surfaceRaised },
           ]}
-          disabled={!parsed}
+          disabled={!parsed || !!excluded}
+          accessibilityState={{ disabled: !parsed || !!excluded }}
           onPress={add}
         >
-          <Ionicons name="add" size={22} color={colors.text} />
-        </Pressable>
+          <Ionicons name="add" size={22} color={parsed ? colors.onAccent : colors.textMuted} />
+        </Touch>
       </View>
+      {text.trim() ? <Text accessibilityLiveRegion="polite" style={{ color: excluded ? colors.warning : parsed ? colors.accent : colors.textMuted, fontSize: 12, marginTop: -8, marginBottom: 12 }}>{excluded ? 'This person is already included.' : parsed ? 'Address ready. Tap + to add.' : 'Enter a full wallet address or scan a QR code.'}</Text> : null}
       <ContactChips onPick={(a) => onAdd(a)} exclude={exclude} />
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: Theme) => StyleSheet.create({
   row: {
     flexDirection: "row",
     gap: spacing.sm,
@@ -82,6 +92,7 @@ const styles = StyleSheet.create({
   },
   input: {
     flex: 1,
+    minWidth: 0,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     borderWidth: 1,

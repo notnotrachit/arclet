@@ -3,7 +3,7 @@ import { Text, View } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import { getAddress, isAddress } from 'viem';
 import { confirmWithBiometrics } from '@/lib/auth';
-import { formatUsdc, parseUsdcInput, usdcToDecimal } from '@/lib/format';
+import { formatPaymentAmount as formatUsdc, parseUsdcInput, usdcToDecimal } from '@/lib/format';
 import { recordCashSettlement, settleDebt } from '@/lib/groups';
 import { friendlyError } from '@/lib/tx';
 import { useActivity } from '@/state/activity';
@@ -11,8 +11,8 @@ import { useContacts } from '@/state/contacts';
 import { useGroups } from '@/state/groups';
 import { useGroup } from '@/state/useGroup';
 import { useReadyWallet } from '@/state/wallet';
-import { AmountInput, Avatar, Banner, Button, Field, Screen } from '@/ui/components';
-import { spacing, type } from '@/ui/theme';
+import { AmountInput, Avatar, Banner, Button, Field, PageIntro, Screen } from '@/ui/components';
+import { spacing, useTheme } from '@/ui/theme';
 
 /**
  * Two modes:
@@ -20,13 +20,14 @@ import { spacing, type } from '@/ui/theme';
  *  - debtor param: they owe me → I confirm they paid me outside Arclet (cash, bank).
  */
 export default function Settle() {
+  const { type } = useTheme();
   const params = useLocalSearchParams<{ address: string; creditor?: string; debtor?: string; amount?: string }>();
   const { account, network, refreshBalance } = useReadyWallet();
   const { label } = useContacts();
   const { refresh: refreshGroups } = useGroups();
   const { refresh: refreshActivity } = useActivity();
-  const { address, detail } = useGroup(params.address);
-  const max = params.amount ? BigInt(params.amount) : 0n;
+  const { address, detail, error: loadError } = useGroup(params.address);
+  const max = params.amount && /^\d+$/.test(params.amount) ? BigInt(params.amount) : 0n;
   const [amountInput, setAmountInput] = useState(max ? usdcToDecimal(max) : '');
   const [note, setNote] = useState('');
   const [busy, setBusy] = useState(false);
@@ -69,6 +70,7 @@ export default function Settle() {
           disabled={!valid}
         />
       }>
+      <PageIntro eyebrow="Settle up" title={creditor ? 'Square things up.' : 'Already paid you back?'} body={creditor ? 'Send your share and clear the balance together.' : 'Only mark this as paid after you’ve received the money.'} />
       <View style={{ alignItems: 'center', marginTop: spacing.md }}>
         <Avatar address={other} name={label(other)} size={56} />
         <Text style={[type.heading, { marginTop: spacing.sm }]}>
@@ -77,13 +79,14 @@ export default function Settle() {
         <Text style={type.muted}>in {detail?.name ?? '…'} · ${formatUsdc(max)}</Text>
       </View>
       <AmountInput value={amountInput} onChange={setAmountInput} />
-      <Field label="Note" placeholder={creditor ? 'Thanks for dinner!' : 'Paid me in cash'} value={note} onChangeText={(t) => setNote(t.slice(0, 280))} />
+      <Field label="Note (optional)" placeholder={creditor ? 'Thanks for dinner!' : 'Paid me in cash'} value={note} onChangeText={(t) => setNote(t.slice(0, 280))} hint="Notes are public on Arc." />
       <Banner>
         {creditor
-          ? 'USDC goes straight to them through the group contract, which clears the debt in the same transaction.'
-          : 'No money moves. This records onchain that they paid you some other way.'}
+          ? 'Pay them in USDC and clear this split balance at the same time.'
+          : 'This records a repayment made in cash or through another app. It doesn’t transfer money.'}
       </Banner>
       {amount && max && amount > max ? <Banner tone="error">That’s more than what’s owed.</Banner> : null}
+      {loadError ? <Banner tone="error">Couldn’t load this group. Go back and try again.</Banner> : null}
       {error ? <Banner tone="error">{error}</Banner> : null}
     </Screen>
   );

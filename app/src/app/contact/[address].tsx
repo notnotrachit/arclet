@@ -1,4 +1,5 @@
-import { Alert, Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Touch } from '@/ui/motion';
+import { Alert, Linking, Platform, StyleSheet, Text, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import Ionicons from '@expo/vector-icons/Ionicons';
@@ -11,9 +12,11 @@ import { useToast } from '@/state/toast';
 import { useReadyWallet } from '@/state/wallet';
 import { ActivityRow } from '@/ui/ActivityRow';
 import { Avatar, Banner, Button, Card, Empty, Screen, SectionTitle } from '@/ui/components';
-import { colors, radius, spacing, type } from '@/ui/theme';
+import { radius, spacing, useTheme, useThemeStyles, type Theme } from '@/ui/theme';
 
 export default function ContactDetail() {
+  const styles = useThemeStyles(createStyles);
+  const { colors, type } = useTheme();
   const { address: param } = useLocalSearchParams<{ address: string }>();
   const { network } = useReadyWallet();
   const { nameOf, remove } = useContacts();
@@ -49,7 +52,7 @@ export default function ContactDetail() {
       <View style={styles.header}>
         <Avatar address={address} name={name} size={72} />
         <Text style={[type.title, { marginTop: spacing.sm }]}>{name ?? shortAddress(address)}</Text>
-        <Pressable
+        <Touch
           accessibilityRole="button"
           accessibilityLabel="Copy address"
           onPress={async () => {
@@ -59,7 +62,7 @@ export default function ContactDetail() {
           style={styles.addr}>
           <Text style={type.mono}>{shortAddress(address)}</Text>
           <Ionicons name="copy-outline" size={14} color={colors.textMuted} />
-        </Pressable>
+        </Touch>
       </View>
 
       <View style={styles.buttons}>
@@ -106,7 +109,7 @@ export default function ContactDetail() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: Theme) => StyleSheet.create({
   header: { alignItems: 'center', marginVertical: spacing.md },
   addr: {
     flexDirection: 'row',

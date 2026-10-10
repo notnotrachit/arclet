@@ -1,5 +1,6 @@
+import { Touch } from '@/ui/motion';
 import { useState } from 'react';
-import { Pressable, StyleSheet, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 import { router, Stack, useLocalSearchParams } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { getAddress, isAddress, type Address } from 'viem';
@@ -9,11 +10,13 @@ import { requestScannedAddress } from '@/lib/scanBus';
 import { useContacts } from '@/state/contacts';
 import { useToast } from '@/state/toast';
 import { useReadyWallet } from '@/state/wallet';
-import { Avatar, Banner, Button, Field, Screen } from '@/ui/components';
-import { colors, radius, spacing } from '@/ui/theme';
+import { Avatar, Banner, Button, Field, PageIntro, Screen } from '@/ui/components';
+import { radius, spacing, useTheme, useThemeStyles, type Theme } from '@/ui/theme';
 
 /** Add a contact, or edit one when opened with an address that's already saved. */
 export default function NewContact() {
+  const styles = useThemeStyles(createStyles);
+  const { colors } = useTheme();
   const params = useLocalSearchParams<{ address?: string; name?: string }>();
   const { address: me } = useReadyWallet();
   const { nameOf, save } = useContacts();
@@ -45,6 +48,7 @@ export default function NewContact() {
       <View style={{ alignItems: 'center', marginVertical: spacing.md }}>
         <Avatar address={parsed ?? '0x000000'} name={name || undefined} size={64} />
       </View>
+      <PageIntro eyebrow="Your people" title={editing ? 'Update their details.' : 'Put a name to an address.'} body="Save a name so it’s easier to find and pay the right person." />
       <Field
         label="Name"
         placeholder="e.g. Priya"
@@ -65,7 +69,7 @@ export default function NewContact() {
         />
         {!initial ? (
           <View style={styles.actions}>
-            <Pressable
+            <Touch
               accessibilityRole="button"
               accessibilityLabel="Scan address QR"
               style={styles.iconBtn}
@@ -74,7 +78,7 @@ export default function NewContact() {
                 router.push('/scan');
               }}>
               <Ionicons name="qr-code-outline" size={20} color={colors.text} />
-            </Pressable>
+            </Touch>
           </View>
         ) : null}
       </View>
@@ -84,7 +88,7 @@ export default function NewContact() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: Theme) => StyleSheet.create({
   actions: { flexDirection: 'row', justifyContent: 'flex-end', marginTop: -spacing.sm },
   iconBtn: {
     flexDirection: 'row',

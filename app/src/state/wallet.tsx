@@ -16,6 +16,7 @@ interface WalletContextValue {
   setNetwork: (n: NetworkId) => Promise<void>;
   /** Spendable USDC in 6-decimal units (native balance, which is also the gas balance). */
   balance: bigint | null;
+  balanceError: string | null;
   refreshBalance: () => Promise<void>;
   create: () => Promise<string>;
   importFrom: (input: string) => Promise<void>;
@@ -35,8 +36,11 @@ export function WalletProvider({ children }: { children: ReactNode }) {
   const [network, setNetworkState] = useState<NetworkId>(DEFAULT_NETWORK);
   // Tagged with wallet+network so a stale balance is never shown after switching.
   const [bal, setBal] = useState<{ key: string; value: bigint } | null>(null);
+  const [balError, setBalError] = useState<{ key: string; message: string } | null>(null);
   const balanceKey = account ? `${network}:${account.address}` : '';
   const balance = bal && bal.key === balanceKey ? bal.value : null;
+
+  const balanceError = balError?.key === balanceKey ? balError.message : null;
 
   useEffect(() => {
     (async () => {
@@ -58,9 +62,10 @@ export function WalletProvider({ children }: { children: ReactNode }) {
     if (!account) return;
     try {
       const wei = await withRetry(() => getPublicClient(network).getBalance({ address: account.address }));
+      setBalError(null);
       setBal({ key: `${network}:${account.address}`, value: nativeToUsdc(wei) });
     } catch {
-      /* keep last known balance */
+      setBalError({ key: `${network}:${account.address}`, message: 'Couldn’t update your balance. Check your connection and try again.' });
     }
   }, [account, network]);
 
@@ -104,12 +109,13 @@ export function WalletProvider({ children }: { children: ReactNode }) {
       network,
       setNetwork,
       balance,
+      balanceError,
       refreshBalance,
       create,
       importFrom,
       reset,
     }),
-    [status, account, network, setNetwork, balance, refreshBalance, create, importFrom, reset],
+    [status, account, network, setNetwork, balance, balanceError, refreshBalance, create, importFrom, reset],
   );
 
   return <WalletContext.Provider value={value}>{children}</WalletContext.Provider>;

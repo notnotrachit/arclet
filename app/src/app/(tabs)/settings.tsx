@@ -2,13 +2,15 @@ import { Alert, Linking, Platform, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import { confirmWithBiometrics } from '@/lib/auth';
-import { addressUrl, NETWORKS, type NetworkId } from '@/lib/networks';
+import { addressUrl, type NetworkId } from '@/lib/networks';
 import { useToast } from '@/state/toast';
 import { useReadyWallet } from '@/state/wallet';
-import { Button, Card, ListRow, Screen, SectionTitle, Segmented } from '@/ui/components';
-import { spacing, type } from '@/ui/theme';
+import { Button, Card, ListRow, Screen, SectionTitle, Segmented, PageIntro } from '@/ui/components';
+import { AppearancePicker } from '@/ui/AppearancePicker';
+import { spacing, useTheme } from '@/ui/theme';
 
 export default function Settings() {
+  const { type } = useTheme();
   const { address, network, setNetwork, reset } = useReadyWallet();
   const toast = useToast();
 
@@ -28,7 +30,10 @@ export default function Settings() {
   };
 
   return (
-    <Screen>
+    <Screen edges={[]}>
+      <PageIntro eyebrow="Make it yours" title="Your wallet, your way." body="Choose your appearance, network, and wallet preferences." />
+      <SectionTitle>Appearance</SectionTitle>
+      <AppearancePicker />
       <SectionTitle>Network</SectionTitle>
       <Segmented<NetworkId>
         options={[
@@ -38,9 +43,6 @@ export default function Settings() {
         value={network}
         onChange={setNetwork}
       />
-      <Text style={[type.small, { marginBottom: spacing.md }]}>
-        Same address on both networks. Group wallets: {NETWORKS[network].factory ? 'available' : 'not deployed yet'}.
-      </Text>
 
       <SectionTitle>Wallet</SectionTitle>
       <Card>
@@ -68,7 +70,7 @@ export default function Settings() {
         </View>
       </Card>
       <Card style={{ paddingVertical: spacing.xs }}>
-        <ListRow title="Show recovery phrase" subtitle="Requires Face ID / fingerprint" onPress={() => router.push('/backup')} />
+        <ListRow title="Show recovery phrase" subtitle="Keep a safe copy · requires device authentication" onPress={() => router.push('/backup')} />
         {network === 'testnet' ? (
           <ListRow
             title="Get testnet USDC"
@@ -78,7 +80,8 @@ export default function Settings() {
         ) : null}
       </Card>
 
-      <SectionTitle>Danger zone</SectionTitle>
+      <SectionTitle>Remove wallet</SectionTitle>
+      <Text style={[type.muted, { marginBottom: spacing.md }]}>Save your recovery phrase first. You’ll need it to restore this wallet.</Text>
       <Button title="Remove wallet from this phone" variant="danger" onPress={onReset} />
       <Text style={[type.small, { marginTop: spacing.lg, textAlign: 'center' }]}>
         Arclet · self-custodial · unaudited hackathon software

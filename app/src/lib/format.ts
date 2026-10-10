@@ -2,18 +2,21 @@ import { formatUnits, parseUnits, type Address } from 'viem';
 import { NATIVE_TO_USDC, USDC_DECIMALS } from './contracts/arc';
 
 /** Formats 6-decimal USDC units, e.g. 12_500000n -> "12.50". Shows more precision for tiny amounts. */
-export function formatUsdc(units: bigint, { sign = false }: { sign?: boolean } = {}): string {
+export function formatUsdc(units: bigint, { sign = false, exact = false }: { sign?: boolean; exact?: boolean } = {}): string {
   const negative = units < 0n;
   const abs = negative ? -units : units;
   const raw = formatUnits(abs, USDC_DECIMALS);
   const [whole, frac = ''] = raw.split('.');
   let decimals = frac.padEnd(2, '0');
-  if (abs > 0n && abs < 10_000n) decimals = frac.replace(/0+$/, '').padEnd(2, '0'); // < $0.01: keep precision
+  if (exact || (abs > 0n && abs < 10_000n)) decimals = frac.replace(/0+$/, '').padEnd(2, '0'); // < $0.01: keep precision
   else decimals = decimals.slice(0, 2);
   const grouped = whole.replace(/\B(?=(\d{3})+(?!\d))/g, ',');
   const prefix = negative ? '-' : sign && abs > 0n ? '+' : '';
   return `${prefix}${grouped}.${decimals}`;
 }
+
+/** Full payment precision so review screens always match the amount being sent. */
+export const formatPaymentAmount = (units: bigint) => formatUsdc(units, { exact: true });
 
 /** Native balance (18 decimals) -> 6-decimal units, truncating sub-micro dust. */
 export const nativeToUsdc = (wei: bigint) => wei / NATIVE_TO_USDC;

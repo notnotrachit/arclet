@@ -1,5 +1,6 @@
+import { Touch } from '@/ui/motion';
 import { useState } from 'react';
-import { Pressable, Text } from 'react-native';
+import { Text } from 'react-native';
 import { router } from 'expo-router';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import type { Address } from 'viem';
@@ -11,10 +12,11 @@ import { useContacts } from '@/state/contacts';
 import { useGroups } from '@/state/groups';
 import { useReadyWallet } from '@/state/wallet';
 import { AddressPicker } from '@/ui/AddressPicker';
-import { Avatar, Banner, Button, Card, Field, ListRow, Screen, SectionTitle } from '@/ui/components';
-import { colors, spacing, type } from '@/ui/theme';
+import { Avatar, Banner, Button, Card, Field, ListRow, Screen, SectionTitle, PageIntro } from '@/ui/components';
+import { spacing, useTheme } from '@/ui/theme';
 
 export default function NewGroup() {
+  const { colors, type } = useTheme();
   const { account, address, network } = useReadyWallet();
   const { label } = useContacts();
   const { refresh } = useGroups();
@@ -55,11 +57,12 @@ export default function NewGroup() {
 
   return (
     <Screen footer={<Button title="Create group" onPress={onCreate} loading={busy} disabled={!valid} />}>
+      <PageIntro eyebrow="Plan something together" title="Give your group a home." body="Choose a name, add your people, and manage shared money in one place." />
       <Field label="Group name" placeholder="Goa trip, Flat 4B, Team lunch…" value={name} onChangeText={setName} maxLength={64} />
 
       <SectionTitle>Members</SectionTitle>
       <Text style={[type.small, { marginBottom: spacing.sm }]}>
-        Add each person’s Arclet address (they can show it from Request → QR). You can add more later.
+        Pick a saved friend, paste their address, or scan their QR. You can add more people later.
       </Text>
       <AddressPicker onAdd={addMember} exclude={[address, ...members]} />
       <Card style={{ paddingVertical: spacing.xs }}>
@@ -71,12 +74,12 @@ export default function NewGroup() {
             title={label(m)}
             subtitle={shortAddress(m)}
             right={
-              <Pressable
+              <Touch
                 accessibilityRole="button"
                 accessibilityLabel={`Remove ${label(m)}`}
                 onPress={() => setMembers((all) => all.filter((x) => x !== m))}>
                 <Ionicons name="close-circle" size={22} color={colors.textFaint} />
-              </Pressable>
+              </Touch>
             }
           />
         ))}
@@ -91,7 +94,7 @@ export default function NewGroup() {
         hint="Members can pay up to this much per payment from the group wallet. Admins are not limited."
         error={limitUnits === null ? 'Enter a valid amount' : undefined}
       />
-      <Banner>Creating a group deploys a small contract on Arc. The fee is paid in USDC (a few cents).</Banner>
+      <Banner>Creating a shared wallet has a small network fee paid in USDC. You’ll be its first admin.</Banner>
       {error ? <Banner tone="error">{error}</Banner> : null}
     </Screen>
   );

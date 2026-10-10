@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { router } from 'expo-router';
 import { useWallet } from '@/state/wallet';
-import { Banner, Button, Field, Screen } from '@/ui/components';
+import { Banner, Button, Field, PageIntro, Screen } from '@/ui/components';
 
 export default function ImportWallet() {
   const { importFrom } = useWallet();
@@ -23,7 +23,8 @@ export default function ImportWallet() {
 
   return (
     <Screen
-      footer={<Button title="Import" onPress={onImport} loading={busy} disabled={!input.trim()} />}>
+      footer={<Button title="Restore my wallet" loadingTitle="Restoring wallet…" onPress={onImport} loading={busy} disabled={!input.trim()} />}>
+      <PageIntro eyebrow="Welcome back" title="Bring your wallet along." body="Enter your recovery phrase or private key. Your wallet will be restored on this device." />
       <Banner tone="warning">Only import a wallet you control. Anyone with this phrase can move your funds.</Banner>
       <Field
         label="Recovery phrase or private key"

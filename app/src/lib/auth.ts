@@ -22,3 +22,30 @@ export async function confirmWithBiometrics(reason: string): Promise<boolean> {
   });
   return result.success;
 }
+
+/** Recovery secrets require a new biometric challenge; never silently bypass it. */
+export async function confirmRecoveryReveal(): Promise<boolean> {
+  if (Platform.OS === 'web') {
+    throw new Error('Open Arclet on your phone to reveal your recovery phrase with device biometrics.');
+  }
+  const [hasHardware, enrolled] = await Promise.all([
+    LocalAuthentication.hasHardwareAsync(),
+    LocalAuthentication.isEnrolledAsync(),
+  ]);
+  if (!hasHardware || !enrolled) {
+    throw new Error('Set up fingerprint or Face ID in your device settings, then try again.');
+  }
+  const result = await LocalAuthentication.authenticateAsync({
+    promptMessage: 'Show recovery phrase',
+    promptDescription: 'Verify it’s you before showing your wallet’s recovery phrase.',
+    cancelLabel: 'Cancel',
+    disableDeviceFallback: true,
+    fallbackLabel: '',
+    biometricsSecurityLevel: 'strong',
+    requireConfirmation: true,
+  });
+  if (!result.success && !['user_cancel', 'app_cancel', 'system_cancel'].includes(result.error)) {
+    throw new Error('Biometric verification didn’t complete. Try again with fingerprint or Face ID.');
+  }
+  return result.success;
+}

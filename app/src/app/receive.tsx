@@ -1,11 +1,11 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
-import { Platform, Share, StyleSheet, Text, View } from 'react-native';
+import { Platform, Share, StyleSheet, Text, View, useWindowDimensions } from 'react-native';
 import { router, useFocusEffect } from 'expo-router';
 import * as Haptics from 'expo-haptics';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import QRCode from 'react-native-qrcode-svg';
 import { getPublicClient } from '@/lib/clients';
-import { formatUsdc, parseUsdcInput, usdcToDecimal } from '@/lib/format';
+import { formatPaymentAmount as formatUsdc, parseUsdcInput, usdcToDecimal } from '@/lib/format';
 import { addTagReadListener, canBroadcastNfc, hceNfcEnabled, openNfcSettings, startBroadcast, stopBroadcast } from '@/lib/nfc';
 import { NETWORKS } from '@/lib/networks';
 import {
@@ -20,12 +20,17 @@ import {
 import { useActivity } from '@/state/activity';
 import { useContacts } from '@/state/contacts';
 import { useReadyWallet } from '@/state/wallet';
-import { AmountInput, Banner, Button, Card, Field, Screen, Segmented } from '@/ui/components';
-import { colors, radius, spacing, type } from '@/ui/theme';
+import { AmountInput, Banner, Button, Card, Field, Screen, Segmented, PageIntro, SuccessMark } from '@/ui/components';
+import { Pulse } from '@/ui/motion';
+import { radius, spacing, useTheme, useThemeStyles, type Theme } from '@/ui/theme';
 
 type Phase = 'edit' | 'waiting' | 'paid';
 
 export default function Receive() {
+  const styles = useThemeStyles(createStyles);
+  const { colors, type } = useTheme();
+  const { width } = useWindowDimensions();
+  const qrSize = Math.min(220, width - 110);
   const { address, network, refreshBalance } = useReadyWallet();
   const { label, nameOf } = useContacts();
   const { refresh: refreshActivity } = useActivity();
@@ -35,6 +40,7 @@ export default function Receive() {
   const [request, setRequest] = useState<PaymentRequest | null>(null);
   const [format, setFormat] = useState<'arclet' | 'any'>('arclet');
   const [nfcState, setNfcState] = useState<'off' | 'unsupported' | 'ready' | 'read' | 'error'>('unsupported');
+  const [connectionIssue, setConnectionIssue] = useState(false);
   const [paid, setPaid] = useState<IncomingPayment | null>(null);
   const watch = useRef<{ ref: string; amount?: bigint; fromBlock: bigint; stop: boolean } | null>(null);
 
@@ -60,6 +66,8 @@ export default function Receive() {
   }, []);
 
   const start = async () => {
+    stopAll();
+    setConnectionIssue(false);
     const req: PaymentRequest = {
       to: address,
       amount: amount ? usdcToDecimal(amount) : undefined,
@@ -70,22 +78,26 @@ export default function Receive() {
     setRequest(req);
     setPhase('waiting');
     setPaid(null);
+    // Register immediately so Cancel/back also stops setup that is still awaiting the network.
+    const w = { ref: req.ref!, amount: amount ?? undefined, fromBlock: 0n, stop: false };
+    watch.current = w;
 
     if (canBroadcastNfc()) {
       if (!hceNfcEnabled()) setNfcState('off');
       else {
         try {
           await startBroadcast(buildRequestUri(req));
-          setNfcState('ready');
+          if (!w.stop) setNfcState('ready');
         } catch {
-          setNfcState('error');
+          if (!w.stop) setNfcState('error');
         }
       }
     } else setNfcState('unsupported');
 
+    if (w.stop) { if (!watch.current) stopBroadcast().catch(() => {}); return; }
     const latest = await getPublicClient(network).getBlockNumber().catch(() => 0n);
-    const w = { ref: req.ref!, amount: amount ?? undefined, fromBlock: latest > 5n ? latest - 5n : 0n, stop: false };
-    watch.current = w;
+    if (w.stop) return;
+    w.fromBlock = latest > 5n ? latest - 5n : 0n;
     poll(w);
   };
 
@@ -93,6 +105,7 @@ export default function Receive() {
     while (!w.stop) {
       try {
         const hit = await findIncomingPayment({ network, me: address, ref: w.ref, amount: w.amount, fromBlock: w.fromBlock });
+        if (!w.stop) setConnectionIssue(false);
         if (hit && !w.stop) {
           w.stop = true;
           stopBroadcast().catch(() => {});
@@ -104,7 +117,7 @@ export default function Receive() {
           return;
         }
       } catch {
-        /* transient; keep polling */
+        if (!w.stop) setConnectionIssue(true);
       }
       await new Promise((r) => setTimeout(r, 2000));
     }
@@ -128,9 +141,8 @@ export default function Receive() {
           </>
         }>
         <View style={styles.center}>
-          <View style={styles.check}>
-            <Ionicons name="checkmark" size={56} color={colors.bg} />
-          </View>
+          <SuccessMark />
+          <Text style={[type.heading, { marginTop: spacing.lg }]}>Payment received</Text>
           <Text style={[type.hero, { marginTop: spacing.lg }]}>${formatUsdc(paid.amount)}</Text>
           <Text style={type.muted}>from {label(paid.from)}</Text>
           {paid.note ? <Text style={[type.body, { marginTop: spacing.sm }]}>“{paid.note}”</Text> : null}
@@ -156,6 +168,7 @@ export default function Receive() {
         footer={
           <>
             <Button
+              key="share-request"
               title="Share link"
               variant="secondary"
               icon="share-outline"
@@ -166,49 +179,52 @@ export default function Receive() {
         }>
         <View style={{ alignItems: 'center' }}>
           <Text style={type.muted}>{request.amount ? 'Requesting' : 'Any amount'}</Text>
-          {request.amount ? <Text style={type.hero}>${formatUsdc(parseUsdcInput(request.amount)!)}</Text> : null}
+          {request.amount ? <Text style={type.hero} adjustsFontSizeToFit numberOfLines={1}>${formatUsdc(parseUsdcInput(request.amount)!)}</Text> : null}
           {request.note ? <Text style={[type.body, { marginBottom: spacing.sm }]}>“{request.note}”</Text> : null}
         </View>
 
         <NfcStatus state={nfcState} />
+        {connectionIssue ? <Banner tone="warning">Connection interrupted. We’ll keep checking for payment. Keep this request open.</Banner> : null}
 
         <Card style={styles.qrCard}>
           <View style={styles.qr} accessible accessibilityLabel="Payment request QR code">
-            <QRCode value={uri} size={220} backgroundColor="#FFFFFF" color="#0B0F17" quietZone={12} />
+            <QRCode value={uri} size={qrSize} backgroundColor="#FFFFFF" color="#0B0F17" quietZone={12} />
           </View>
-          <Segmented
+          <View style={{ alignSelf: 'stretch' }}><Segmented
             options={[
               { value: 'arclet', label: 'Arclet' },
               { value: 'any', label: 'Any wallet' },
             ]}
             value={format}
             onChange={setFormat}
-          />
+          /></View>
           <Text style={[type.small, { textAlign: 'center' }]}>
             {format === 'arclet'
               ? 'Scan with Arclet: amount and note are filled in, and this screen updates when paid.'
-              : `Standard EIP-681 USDC request for wallets like MetaMask (no note). Detected by amount${request.amount ? '' : ' — set an amount to auto-detect'}.`}
+              : `For compatible wallets such as MetaMask. Notes aren’t included. Payment is matched by amount${request.amount ? '' : ' — set an amount to auto-detect'}.`}
           </Text>
         </Card>
-        <Text style={[type.small, { textAlign: 'center' }]}>Waiting for payment…</Text>
+<Pulse><View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: spacing.sm }}><View style={{ width: 6, height: 6, borderRadius: 3, backgroundColor: colors.accent }} /><Text accessibilityLiveRegion="polite" style={type.muted}>Waiting for payment…</Text></View></Pulse>
       </Screen>
     );
   }
 
   return (
     <Screen
-      footer={<Button title="Show request" icon="qr-code-outline" onPress={start} disabled={amountInvalid} />}>
-      <AmountInput value={amountInput} onChange={setAmountInput} autoFocus />
+      footer={<Button key="create-request" title="Show request" icon="qr-code-outline" onPress={start} disabled={amountInvalid} />}>
+      <PageIntro eyebrow="Receive money" title="Share a QR. Get paid." body="Choose an amount, or let the sender choose. We’ll update your request when payment arrives." />
+      <AmountInput value={amountInput} onChange={setAmountInput} />
       <Text style={[type.small, { textAlign: 'center', marginTop: -spacing.md, marginBottom: spacing.md }]}>
         Leave empty to let the payer choose
       </Text>
       <Field
-        label="Note"
+        label="Note (optional)"
         placeholder="e.g. Pizza night 🍕"
         value={note}
         onChangeText={(t) => setNote(t.slice(0, MAX_NOTE_LENGTH))}
         hint="Pre-fills the payer’s note. Notes are public onchain."
       />
+      {amountInvalid ? <Banner tone="error">Enter an amount greater than zero, or leave it empty for any amount.</Banner> : null}
       {Platform.OS === 'ios' ? (
         <Banner>iPhone can’t broadcast over NFC (Apple restriction). Payers can scan your QR, or you can tap an Android phone to pay.</Banner>
       ) : null}
@@ -217,6 +233,8 @@ export default function Receive() {
 }
 
 function NfcStatus({ state }: { state: 'off' | 'unsupported' | 'ready' | 'read' | 'error' }) {
+  const styles = useThemeStyles(createStyles);
+  const { colors } = useTheme();
   if (state === 'unsupported') return null;
   const map = {
     ready: { icon: 'radio-outline', text: 'Ready to tap: the payer just holds their unlocked phone to the back of this one. Arclet opens on their phone automatically.', color: colors.accent },
@@ -234,7 +252,7 @@ function NfcStatus({ state }: { state: 'off' | 'unsupported' | 'ready' | 'read' 
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: Theme) => StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center' },
   check: {
     width: 96,

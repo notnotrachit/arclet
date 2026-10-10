@@ -1,7 +1,9 @@
 import { useEffect, useRef } from 'react';
-import { ActivityIndicator, Linking, Platform, View } from 'react-native';
+import { Linking, Platform } from 'react-native';
 import { Stack, router, usePathname } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
+import * as SplashScreen from 'expo-splash-screen';
+import { BrandLoading } from '@/ui/Brand';
+import { AppearanceProvider } from '@/state/appearance';
 import * as Notifications from 'expo-notifications';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { parsePaymentUri } from '@/lib/payments';
@@ -11,7 +13,13 @@ import { ContactsProvider } from '@/state/contacts';
 import { GroupsProvider } from '@/state/groups';
 import { ToastProvider } from '@/state/toast';
 import { useWallet, WalletProvider } from '@/state/wallet';
-import { colors } from '@/ui/theme';
+import { useTheme } from '@/ui/theme';
+import { MotionProvider } from '@/ui/motion';
+
+if (Platform.OS !== 'web') {
+  SplashScreen.preventAutoHideAsync().catch(() => {});
+  SplashScreen.setOptions({ duration: 350, fade: true });
+}
 
 function useNotificationTaps() {
   useEffect(() => {
@@ -53,16 +61,16 @@ function useColdStartPayLink(ready: boolean) {
 }
 
 function RootStack() {
+  const { colors } = useTheme();
   const { status } = useWallet();
   useNotificationTaps();
   useColdStartPayLink(status === 'ready');
+  useEffect(() => {
+    if (status !== 'loading' && Platform.OS !== 'web') SplashScreen.hideAsync().catch(() => {});
+  }, [status]);
 
   if (status === 'loading') {
-    return (
-      <View style={{ flex: 1, backgroundColor: colors.bg, alignItems: 'center', justifyContent: 'center' }}>
-        <ActivityIndicator color={colors.accent} />
-      </View>
-    );
+    return <BrandLoading />;
   }
 
   const hasWallet = status === 'ready';
@@ -74,6 +82,7 @@ function RootStack() {
         headerShadowVisible: false,
         contentStyle: { backgroundColor: colors.bg },
         headerBackButtonDisplayMode: 'minimal',
+        headerTitleStyle: { fontSize: 17, fontWeight: '600' },
       }}>
       <Stack.Protected guard={!hasWallet}>
         <Stack.Screen name="onboarding/index" options={{ headerShown: false }} />
@@ -81,7 +90,7 @@ function RootStack() {
       </Stack.Protected>
       <Stack.Protected guard={hasWallet}>
         <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="pay" options={{ title: 'Pay', presentation: 'modal' }} />
+        <Stack.Screen name="pay" options={{ title: 'Send money', presentation: 'modal' }} />
         <Stack.Screen name="receive" options={{ title: 'Request payment' }} />
         <Stack.Screen name="scan" options={{ title: 'Scan QR', presentation: 'fullScreenModal' }} />
         <Stack.Screen name="tap" options={{ title: 'Tap to pay', presentation: 'modal' }} />
@@ -101,8 +110,7 @@ function RootStack() {
 
 export default function RootLayout() {
   return (
-    <SafeAreaProvider>
-      <StatusBar style="light" />
+    <SafeAreaProvider><AppearanceProvider><MotionProvider>
       <WalletProvider>
         <ContactsProvider>
           <ToastProvider>
@@ -114,6 +122,6 @@ export default function RootLayout() {
           </ToastProvider>
         </ContactsProvider>
       </WalletProvider>
-    </SafeAreaProvider>
+    </MotionProvider></AppearanceProvider></SafeAreaProvider>
   );
 }

@@ -1,5 +1,5 @@
 import { useMemo, useState } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import * as Clipboard from 'expo-clipboard';
 import QRCode from 'react-native-qrcode-svg';
@@ -7,10 +7,13 @@ import { shortAddress } from '@/lib/format';
 import { useContacts } from '@/state/contacts';
 import { useToast } from '@/state/toast';
 import { useReadyWallet } from '@/state/wallet';
-import { Avatar, Button, Card, Empty, ListRow, Screen, SectionTitle } from '@/ui/components';
-import { colors, radius, spacing, type } from '@/ui/theme';
+import { Avatar, Button, Card, Empty, ListRow, Screen, SectionTitle, Field, PageIntro } from '@/ui/components';
+import { Reveal } from '@/ui/motion';
+import { radius, spacing, useTheme, useThemeStyles, type Theme } from '@/ui/theme';
 
 export default function ContactsTab() {
+  const styles = useThemeStyles(createStyles);
+  const { colors, type } = useTheme();
   const { address } = useReadyWallet();
   const { list } = useContacts();
   const toast = useToast();
@@ -24,7 +27,8 @@ export default function ContactsTab() {
   }, [list, query]);
 
   return (
-    <Screen footer={<Button title="Add contact" icon="person-add-outline" onPress={() => router.push('/contact/new')} />}>
+    <Screen edges={[]} footer={<Button title="Add contact" icon="person-add-outline" onPress={() => router.push('/contact/new')} />}>
+      <PageIntro eyebrow="Your people" title="Less typing. More sharing." body="Save a friend once. Pay them by name next time." />
       <Card>
         <View style={styles.meRow}>
           <Avatar address={address} name="You" size={44} />
@@ -35,7 +39,7 @@ export default function ContactsTab() {
           <Button title={showQr ? 'Hide' : 'Show QR'} variant="secondary" onPress={() => setShowQr((s) => !s)} style={styles.smallBtn} />
         </View>
         {showQr ? (
-          <View style={styles.qrWrap}>
+          <Reveal style={styles.qrWrap}>
             <View style={styles.qr} accessible accessibilityLabel="Your address QR code">
               <QRCode value={address} size={200} backgroundColor="#FFFFFF" color="#0B0F17" quietZone={12} />
             </View>
@@ -49,20 +53,19 @@ export default function ContactsTab() {
                 toast({ title: 'Address copied', tone: 'info' });
               }}
             />
-          </View>
+          </Reveal>
         ) : null}
       </Card>
 
       {list.length > 0 ? (
-        <TextInput
-          accessibilityLabel="Search contacts"
+        <Field
+          label="Search contacts"
           value={query}
           onChangeText={setQuery}
           placeholder="Search by name or address"
           placeholderTextColor={colors.textFaint}
           autoCapitalize="none"
           autoCorrect={false}
-          style={styles.search}
         />
       ) : null}
 
@@ -75,7 +78,7 @@ export default function ContactsTab() {
             body="Save people you pay often. Their names show up instead of 0x addresses everywhere in Arclet."
           />
         ) : filtered.length === 0 ? (
-          <Empty icon="search-outline" title="No matches" />
+<Empty icon="search-outline" title="No matches" body="Try a different name or wallet address." action={<Button title="Clear search" variant="ghost" onPress={() => setQuery('')} />} />
         ) : (
           filtered.map((c) => (
             <ListRow
@@ -93,7 +96,7 @@ export default function ContactsTab() {
   );
 }
 
-const styles = StyleSheet.create({
+const createStyles = ({ colors }: Theme) => StyleSheet.create({
   meRow: { flexDirection: 'row', alignItems: 'center' },
   smallBtn: { minHeight: 38, paddingVertical: 8, paddingHorizontal: spacing.md },
   qrWrap: { alignItems: 'center', marginTop: spacing.md, gap: spacing.sm },
