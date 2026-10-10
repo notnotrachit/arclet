@@ -1,0 +1,78 @@
+{
+  "expo": {
+    "name": "Arclet",
+    "slug": "arclet",
+    "scheme": "arclet",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "backgroundColor": "#0B0F17",
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "app.arclet.wallet",
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Arclet uses Face ID to approve payments."
+      }
+    },
+    "android": {
+      "package": "app.arclet.wallet",
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0F17",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "permissions": ["android.permission.NFC", "android.permission.USE_BIOMETRIC"],
+      "predictiveBackGestureEnabled": false
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "experiments": {
+      "typedRoutes": true
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      [
+        "expo-secure-store",
+        {
+          "configureAndroidBackup": true,
+          "faceIDPermission": "Arclet uses Face ID to unlock your wallet."
+        }
+      ],
+      [
+        "expo-local-authentication",
+        {
+          "faceIDPermission": "Arclet uses Face ID to approve payments."
+        }
+      ],
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Arclet uses the camera to scan payment QR codes.",
+          "recordAudioAndroid": false
+        }
+      ],
+      [
+        "expo-notifications",
+        {
+          "color": "#4F8CFF"
+        }
+      ],
+      [
+        "react-native-nfc-manager",
+        {
+          "nfcPermission": "Arclet reads payment requests when you tap another phone.",
+          "selectIdentifiers": ["D2760000850101"],
+          "includeNdefEntitlement": true
+        }
+      ],
+      "expo-build-properties",
+      "./plugins/withNfcLaunch"
+    ]
+  }
+}

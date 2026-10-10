@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!-- Emulates an NFC Forum Type 4 Tag (NDEF application AID D2760000850101).
+     Payment requests are not secret, so the device does not need to be unlocked to answer;
+     the service only answers while the Receive screen has set a payload. -->
+<host-apdu-service xmlns:android="http://schemas.android.com/apk/res/android"
+  android:description="@string/arclet_hce_service_description"
+  android:requireDeviceUnlock="false">
+  <aid-group
+    android:category="other"
+    android:description="@string/arclet_hce_aid_group_description">
+    <aid-filter android:name="D2760000850101" />
+  </aid-group>
+</host-apdu-service>

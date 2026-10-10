@@ -1,0 +1,4 @@
+<resources>
+  <string name="arclet_hce_service_description">Arclet tap-to-pay</string>
+  <string name="arclet_hce_aid_group_description">Arclet payment request</string>
+</resources>
