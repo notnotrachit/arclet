@@ -37,8 +37,11 @@ Arc settles in under a second and charges gas in USDC, so a payment is final by 
 ```
 contracts/   Foundry project (arc-forge). src/, test/ (26 tests incl. fuzz), script/Deploy.s.sol
 app/         Expo app. src/app = screens (expo-router), src/lib = Arc logic, modules/arclet-hce = NFC HCE
+website/     Responsive Arclet landing page with a real device screenshot; plain HTML, CSS and JS
 scripts/     deploy.sh (deploy + verify + sync), sync-contracts.mjs (ABIs + addresses -> app)
 ```
+
+Preview the landing page locally with `python3 -m http.server 4173 --directory website`, then open `http://localhost:4173`.
 
 ## Run it
 

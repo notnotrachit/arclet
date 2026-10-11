@@ -1,0 +1,147 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#f5f3ee" />
+    <meta name="description" content="Arclet is a self-custodial wallet for sending, splitting, and settling USDC on Arc." />
+    <title>Arclet — money, together</title>
+    <link rel="icon" type="image/png" href="./assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&family=Newsreader:ital,opsz,wght@1,6..72,400;1,6..72,500&display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="./styles.css" />
+    <link rel="stylesheet" href="./arc-brand.css" />
+    <script>document.documentElement.dataset.theme = localStorage.getItem('arclet-theme') || 'light';</script>
+  </head>
+  <body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    <div class="page-glow page-glow--top" aria-hidden="true"></div>
+    <header class="site-header">
+      <a class="brand" href="#top" aria-label="Arclet home">
+        <img src="./assets/arclet-mark.svg" alt="" />
+        <span>arclet</span>
+      </a>
+      <nav class="desktop-nav" aria-label="Main navigation">
+        <a href="#how-it-works">How it works</a>
+        <a href="#features">Features</a>
+        <a href="#arc">Built on Arc</a>
+      </nav>
+      <div class="header-actions">
+        <button class="theme-toggle" type="button" aria-label="Switch to dark mode" title="Toggle color theme">
+          <svg class="sun-icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2v2m0 16v2M4.93 4.93l1.42 1.42m11.3 11.3 1.42 1.42M2 12h2m16 0h2M4.93 19.07l1.42-1.42m11.3-11.3 1.42-1.42"/></svg>
+          <svg class="moon-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M20.2 15.1A8.7 8.7 0 0 1 8.9 3.8 8.9 8.9 0 1 0 20.2 15.1Z"/></svg>
+        </button>
+        <a class="button button--dark header-cta" href="#arc">Explore Arclet <span aria-hidden="true">↗</span></a>
+        <button class="menu-toggle" type="button" aria-label="Open navigation" aria-expanded="false"><span></span><span></span></button>
+      </div>
+    </header>
+
+    <main id="main">
+      <section class="hero section-wrap" id="top">
+        <div class="hero-copy reveal">
+          <div class="eyebrow"><span class="eyebrow-dot"></span> A wallet for real life on Arc</div>
+          <h1>Money moves<br />better <em>together.</em></h1>
+          <p class="hero-intro">Send, split, and settle with digital dollars. Arclet makes USDC feel as natural as passing the phone across the table.</p>
+          <div class="hero-actions">
+            <a class="button button--dark button--large" href="#how-it-works">See how it works <span aria-hidden="true">↓</span></a>
+            <a class="text-link" href="https://explorer.arc.io/address/0x7d65f93502853207c947CCB6A87048CBbC00dA08" target="_blank" rel="noreferrer">View the onchain app <span aria-hidden="true">↗</span></a>
+          </div>
+          <div class="hero-proof"><div class="avatar-stack" aria-hidden="true"><span>A</span><span>M</span><span>J</span></div><p>Made for the moments<br /><strong>money brings us together.</strong></p></div>
+        </div>
+
+        <div class="hero-visual reveal reveal--later">
+          <div class="orbit orbit--one" aria-hidden="true"></div>
+          <div class="orbit orbit--two" aria-hidden="true"></div>
+          <div class="orbit-dot orbit-dot--one" aria-hidden="true"></div>
+          <div class="orbit-dot orbit-dot--two" aria-hidden="true"></div>
+          <div class="phone-frame">
+            <div class="phone-camera" aria-hidden="true"></div>
+            <img src="./assets/arclet-device-screen.png" alt="Arclet wallet on a Samsung phone showing a USDC balance, payment shortcuts, and a shared trip wallet" />
+          </div>
+          <div class="float-card float-card--sent">
+            <span class="float-icon float-icon--blue" aria-hidden="true">↗</span>
+            <span><small>Payment sent</small><strong>$5.00 <i>USDC</i></strong></span>
+            <span class="check-badge" aria-label="Complete">✓</span>
+          </div>
+          <div class="float-card float-card--instant"><span class="pulse-ring" aria-hidden="true"></span><span><small>Final in</small><strong>under a second</strong></span></div>
+          <div class="hero-caption"><span class="caption-line"></span> Your money, in motion</div>
+        </div>
+        <a class="scroll-cue" href="#how-it-works" aria-label="Scroll to how it works"><span></span></a>
+      </section>
+
+      <section class="signal-strip" aria-label="Arclet highlights">
+        <div class="signal-inner">
+          <span class="signal-label">A little more human</span>
+          <div class="signal-item"><span class="signal-mark">✳</span> USDC, made simple</div>
+          <div class="signal-item"><span class="signal-mark">⌁</span> Tap to pay</div>
+          <div class="signal-item"><span class="signal-mark">◌</span> Shared wallets</div>
+          <div class="signal-item"><span class="signal-mark">↗</span> Built on Arc</div>
+        </div>
+      </section>
+
+      <section class="section section-how section-wrap" id="how-it-works">
+        <div class="section-heading reveal">
+          <div><span class="eyebrow">Simple by nature</span><h2>All the little money things.<br /><em>Finally simple.</em></h2></div>
+          <p>From splitting the dinner bill to paying someone back, Arclet keeps the useful parts close and the busywork out of the way.</p>
+        </div>
+        <div class="steps-grid">
+          <article class="step-card reveal">
+            <div class="step-top"><span class="step-number">01</span><span class="step-glyph step-glyph--tap" aria-hidden="true"><i></i><i></i><i></i></span></div>
+            <h3>Tap, scan, or send</h3><p>Pay a friend in a few taps, or bring phones together to share a payment request.</p>
+            <div class="step-art step-art--tap" aria-hidden="true"><div class="mini-phone mini-phone--back"></div><div class="mini-phone mini-phone--front"><span class="mini-brand">a</span><span class="mini-usdc">$12.00</span><span class="mini-pay">Pay</span></div><span class="tap-wave tap-wave--a"></span><span class="tap-wave tap-wave--b"></span><span class="sparkle sparkle--a">✦</span><span class="sparkle sparkle--b">✧</span></div>
+          </article>
+          <article class="step-card reveal reveal--delay-1">
+            <div class="step-top"><span class="step-number">02</span><span class="step-glyph step-glyph--group" aria-hidden="true"><i></i><i></i><i></i></span></div>
+            <h3>Make it a shared thing</h3><p>Start a group wallet for a trip, a home, or anything you’re doing together.</p>
+            <div class="step-art step-art--group" aria-hidden="true"><div class="orbit-person orbit-person--one">M</div><div class="orbit-person orbit-person--two">A</div><div class="orbit-person orbit-person--three">J</div><div class="orbit-core"><span>Trip fund</span><strong>$240</strong><i>↗ +$40</i></div><svg viewBox="0 0 280 150"><path d="M48 80C77 23 199 17 230 77M48 80c13 44 169 65 182-3M230 77C174 132 83 124 48 80" /></svg></div>
+          </article>
+          <article class="step-card reveal reveal--delay-2">
+            <div class="step-top"><span class="step-number">03</span><span class="step-glyph step-glyph--settle" aria-hidden="true">↗</span></div>
+            <h3>Settle up, feel good</h3><p>Track who paid, split fairly, and square up when everyone’s ready.</p>
+            <div class="step-art step-art--settle" aria-hidden="true"><div class="settle-row"><span class="settle-avatar">M</span><span class="settle-name">Maya paid</span><strong>$48.00</strong></div><div class="settle-divider"><span></span><b>split 3 ways</b><span></span></div><div class="settle-row settle-row--soft"><span class="settle-avatar settle-avatar--peach">A</span><span class="settle-name">Your share</span><strong>$16.00</strong></div><div class="settle-check">✓</div></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="feature-band" id="features">
+        <div class="feature-band-orbit" aria-hidden="true"></div>
+        <div class="section-wrap feature-layout">
+          <div class="feature-copy reveal"><span class="eyebrow eyebrow--light">A calmer kind of wallet</span><h2>Built for your people.<br /><em>Ready for what’s next.</em></h2><p>Arclet pairs a self-custodial wallet with shared money tools, all on a fast, USDC-native network.</p><a class="button button--light" href="#arc">Get to know Arclet <span aria-hidden="true">↗</span></a></div>
+          <div class="feature-list">
+            <article class="feature-row reveal"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M12 3 19 6v5c0 5-3 8-7 10-4-2-7-5-7-10V6l7-3Z"/><path d="m9 12 2 2 4-4"/></svg></span><div><h3>Keys stay with you</h3><p>Your wallet is self-custodial, protected on your device, and ready for biometric approval.</p></div><span class="row-arrow" aria-hidden="true">↗</span></article>
+            <article class="feature-row reveal reveal--delay-1"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M4 8h16M4 16h16M8 4v8m8 0v8"/><circle cx="8" cy="8" r="2"/><circle cx="16" cy="16" r="2"/></svg></span><div><h3>Your money, your way</h3><p>Keep the balance private on screen, choose your light or dark look, and make the wallet feel like yours.</p></div><span class="row-arrow" aria-hidden="true">↗</span></article>
+            <article class="feature-row reveal reveal--delay-2"><span class="feature-icon" aria-hidden="true"><svg viewBox="0 0 24 24"><path d="M5 12h14M13 6l6 6-6 6"/><circle cx="5" cy="12" r="2"/></svg></span><div><h3>Finality without the wait</h3><p>Payments on Arc settle in under a second, and gas is paid in USDC.</p></div><span class="row-arrow" aria-hidden="true">↗</span></article>
+          </div>
+        </div>
+      </section>
+
+      <section class="section section-groups section-wrap">
+        <div class="group-visual reveal">
+          <div class="group-art-bg" aria-hidden="true"></div>
+          <div class="group-card">
+            <div class="group-card-top"><span class="group-tag"><i></i> Shared wallet</span><span class="group-menu">···</span></div>
+            <div class="group-title-row"><div><small>THE WEEKEND CREW</small><h3>Coastal weekend</h3></div><div class="group-avatars"><i>M</i><i>A</i><i>J</i><b>+2</b></div></div>
+            <div class="group-balance"><small>Group balance</small><strong>$326<span>.40</span></strong><div class="balance-chart"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div></div>
+            <div class="group-activity"><span class="activity-icon">↙</span><span><b>Maya added money</b><small>Just now · shared wallet</small></span><strong>+$80.00</strong></div>
+            <div class="group-activity"><span class="activity-icon activity-icon--peach">↗</span><span><b>Groceries & snacks</b><small>Today · paid by Alex</small></span><strong>−$34.60</strong></div>
+            <div class="group-progress"><span></span></div>
+          </div>
+          <div class="group-sticker"><span>✳</span><b>Good times,<br />good splits.</b></div>
+        </div>
+        <div class="group-copy reveal reveal--later"><span class="eyebrow">Shared wallets, sorted</span><h2>Good plans<br />deserve <em>easy money.</em></h2><p>Keep a group pot for the things you share. See deposits and payments, record expenses, and know where everyone stands without the awkward math.</p><ul class="check-list"><li><span>✓</span> A shared USDC balance</li><li><span>✓</span> Clear expense and split history</li><li><span>✓</span> Straightforward settlement</li></ul><a class="text-link" href="#arc">See how Arclet works <span aria-hidden="true">↗</span></a></div>
+      </section>
+
+      <section class="arc-section" id="arc">
+        <div class="section-wrap arc-content reveal">
+          <div class="arc-orb" aria-hidden="true"><span class="arc-orb-inner"><img class="arc-chain-logo" src="./assets/arc-chain.svg" alt="" /></span><i class="arc-orbit arc-orbit--a"></i><i class="arc-orbit arc-orbit--b"></i><i class="arc-orb-node arc-orb-node--a"></i><i class="arc-orb-node arc-orb-node--b"></i><i class="arc-orb-node arc-orb-node--c"></i></div>
+          <div class="arc-copy"><span class="eyebrow">On the Arc network</span><h2>A more natural<br />way to <em>move value.</em></h2><p>Arclet is built on Arc, an open platform for moving USDC. The group-wallet factory is live on mainnet.</p><div class="arc-facts"><div><small>Network</small><strong>Arc Mainnet</strong></div><div><small>Gas token</small><strong>USDC</strong></div><div><small>Group wallets</small><strong>Live onchain</strong></div></div><a class="button button--dark" href="https://explorer.arc.io/address/0x7d65f93502853207c947CCB6A87048CBbC00dA08" target="_blank" rel="noreferrer">Explore the factory <span aria-hidden="true">↗</span></a></div>
+        </div>
+      </section>
+      <section class="closing section-wrap reveal"><div class="closing-mark"><img src="./assets/arclet-mark.svg" alt="" /></div><span class="eyebrow">Money is better in good company</span><h2>Bring your people.<br /><em>We’ll make the math easy.</em></h2><a class="button button--dark button--large" href="#top">Back to the top <span aria-hidden="true">↑</span></a><div class="closing-orbit" aria-hidden="true"></div></section>
+    </main>
+
+    <footer class="site-footer section-wrap"><a class="brand brand--footer" href="#top"><img src="./assets/arclet-mark.svg" alt="" /><span>arclet</span></a><p>Made for money moments that bring us closer.</p><span class="footer-meta">Self-custodial · Built on Arc · 2026</span></footer>
+    <script src="./script.js"></script>
+  </body>
+</html>

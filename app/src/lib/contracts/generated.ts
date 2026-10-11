@@ -1015,5 +1015,9 @@ export const deployments: Record<'testnet' | 'mainnet', { factory: `0x${string}`
     "deployBlock": 66444227,
     "txHash": "0x5666456a3694a49b21e3eea8ed1a32b1daff02c7f76bf6857f06889fea9d6e80"
   },
-  "mainnet": null
+  "mainnet": {
+    "factory": "0x7d65f93502853207c947ccb6a87048cbbc00da08",
+    "deployBlock": 25260072,
+    "txHash": "0x91db87f5a75480cdd69f373c46f394ef94fc25012b092b3b3cd02798d911de03"
+  }
 };
