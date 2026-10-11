@@ -8,7 +8,7 @@ Arc settles in under a second and charges gas in USDC, so a payment is final by 
 |---|---|
 | **App** | Expo / React Native (Android, iOS, web) in [`app/`](app) |
 | **Contracts** | `GroupWallet` + `GroupWalletFactory` (Solidity, Arc Foundry) in [`contracts/`](contracts) |
-| **Network** | Arc Testnet now. Mainnet addresses get added after deploy (see [Deployments](#deployments)) |
+| **Network** | Arc Testnet and Arc Mainnet (see [Deployments](#deployments)) |
 
 ## Features
 
@@ -68,7 +68,7 @@ To try tap to pay: install the APK on two Android phones. On phone A, open **Req
 | Network | GroupWalletFactory |
 |---|---|
 | Arc Testnet (5042002) | [`0x7d65F93502853207c947CCB6A87048CBbC00dA08`](https://explorer.testnet.arc.io/address/0x7d65F93502853207c947CCB6A87048CBbC00dA08) (verified) |
-| Arc Mainnet (5042) | not deployed yet |
+| Arc Mainnet (5042) | `0x7d65f93502853207c947ccb6a87048cbbc00da08` (deployed at block `25260072`) |
 
 ## Security notes
 
