@@ -68,7 +68,7 @@ To try tap to pay: install the APK on two Android phones. On phone A, open **Req
 | Network | GroupWalletFactory |
 |---|---|
 | Arc Testnet (5042002) | [`0x7d65F93502853207c947CCB6A87048CBbC00dA08`](https://explorer.testnet.arc.io/address/0x7d65F93502853207c947CCB6A87048CBbC00dA08) (verified) |
-| Arc Mainnet (5042) | `0x7d65f93502853207c947ccb6a87048cbbc00da08` (deployed at block `25260072`) |
+| Arc Mainnet (5042) | [`0x7d65f93502853207c947ccb6a87048cbbc00da08`](https://explorer.arc.io/address/0x7d65f93502853207c947ccb6a87048cbbc00da08) (deployed at block `25260072`) |
 
 ## Security notes
 
